@@ -31,15 +31,13 @@ class Pitch extends Table
         //  the corresponding ID in gameoptions.inc.php.
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
-        
-        self::initGameStateLabels( array( 
-            //    "my_first_global_variable" => 10,
-            //    "my_second_global_variable" => 11,
-            //      ...
-            //    "my_first_game_variant" => 100,
-            //    "my_second_game_variant" => 101,
-            //      ...
-        ) );        
+        self::initGameStateLabels(array( 
+            "trumpSuit" => 11, 
+            "alreadyPlayedTrump" => 12,
+        ));
+
+        $this->cards = self::getNew( "module.common.deck" );
+        $this->cards->init( "card" );
 	}
 	
     protected function getGameName( )
@@ -80,15 +78,32 @@ class Pitch extends Table
         /************ Start the game initialization *****/
 
         // Init global values with their initial values
-        //self::setGameStateInitialValue( 'my_first_global_variable', 0 );
-        
-        // Init game statistics
-        // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //self::initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
-        //self::initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
 
-        // TODO: setup the initial game situation here
-       
+        // Set current trick color to zero (= no trick color)
+        self::setGameStateInitialValue( 'trumpSuit', 0 );
+        
+        // Mark if we already played hearts during this hand
+        self::setGameStateInitialValue( 'alreadyPlayedTrump', 0 );       
+
+        // Create cards
+        $cards = array ();
+        foreach ( $this->suits as $suitId => $suit ) {
+            // spade, heart, diamond, club
+            for ($value = 2; $value <= 14; $value ++) {
+                //  2, 3, 4, ... K, A
+                $cards [] = array ('type' => $suitId,'type_arg' => $value,'nbr' => 1 );
+            }
+        }
+        
+        $this->cards->createCards( $cards, 'deck' );
+
+        // Shuffle deck
+        $this->cards->shuffle('deck');
+        // Deal 9 cards to each players
+        $players = self::loadPlayersBasicInfos();
+        foreach ( $players as $player_id => $player ) {
+            $cards = $this->cards->pickCards(9, 'deck', $player_id);
+        } 
 
         // Activate first player (which is in general a good idea :) )
         $this->activeNextPlayer();
@@ -116,7 +131,11 @@ class Pitch extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = self::getCollectionFromDb( $sql );
   
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
+        // Cards in player hand
+        $result['hand'] = $this->cards->getCardsInLocation( 'hand', $current_player_id );
+        
+        // Cards played on the table
+        $result['cardsontable'] = $this->cards->getCardsInLocation( 'cardsontable' );
   
         return $result;
     }
