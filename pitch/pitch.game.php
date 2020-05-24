@@ -187,9 +187,8 @@ class Pitch extends Table
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
         // XXX check rules here
         $currentCard = $this->cards->getCard($card_id);
-        $currentTrickColor = self::getGameStateValue( 'trickSuit' ) ;
-        if( $currentTrickColor == 0 )
-            self::setGameStateValue( 'trickColor', $currentCard['type'] );
+        if( self::getGameStateValue( 'trickSuit' ) == 0 )
+            self::setGameStateValue( 'trickSuit', $currentCard['type'] );
         // And notify
         self::notifyAllPlayers('playCard', clienttranslate('${player_name} plays ${value_displayed} ${color_displayed}'), array (
                 'i18n' => array ('color_displayed','value_displayed' ),'card_id' => $card_id,'player_id' => $player_id,
@@ -253,10 +252,9 @@ class Pitch extends Table
             $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
             $best_value = 0;
             $best_value_player_id = null;
-            $currentTrickColor = self::getGameStateValue('trickColor');
             foreach ( $cards_on_table as $card ) {
                 // Note: type = card color
-                if ($card ['type'] == $currentTrickColor) {
+                if ($card ['type'] == self::getGameStateValue('trickSuit')) {
                     if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
                         $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
                         $best_value = $card ['type_arg']; // Note: type_arg = value of the card
