@@ -239,17 +239,16 @@ function (dojo, declare) {
             var items = this.playerHand.getSelectedItems();
 
             if (items.length > 0) {
-                if (this.checkAction('playCard', true)) {
+                var action = 'playCard';
+                if (this.checkAction(action, true)) {
                     // Can play a card
-                    var card_id = items[0].id;
-                    console.log("on playCard "+card_id);
-
-                    // type is (color - 1) * 13 + (value - 2)
-                    var type = items[0].type;
-                    var color = Math.floor(type / 13) + 1;
-                    var value = type % 13 + 2;
-                    
-                    this.playCardOnTable(this.player_id,color,value,card_id);
+                    var card_id = items[0].id;                    
+                    this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
+                        id : card_id,
+                        lock : true
+                    }, this, function(result) {
+                    }, function(is_error) {
+                    });
 
                     this.playerHand.unselectAll();
                 } else if (this.checkAction('giveCards')) {
@@ -307,38 +306,53 @@ function (dojo, declare) {
                   your pitch.game.php file.
         
         */
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-            
-            // TODO: here, associate your game notifications with local methods
-            
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
-        
-        // TODO: from this point and below, you can write your game notifications handling methods
-        
-        /*
-        Example:
-        
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
-            
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
+        setupNotifications : function() {
+            console.log('notifications subscriptions setup');
+
+            dojo.subscribe('newHand', this, "notif_newHand");
+            dojo.subscribe('playCard', this, "notif_playCard");
+            dojo.subscribe( 'trickWin', this, "notif_trickWin" );
+            this.notifqueue.setSynchronous( 'trickWin', 1000 );
+            dojo.subscribe( 'giveAllCardsToPlayer', this, "notif_giveAllCardsToPlayer" );
+            dojo.subscribe( 'newScores', this, "notif_newScores" );
+        },
+
+        notif_newHand : function(notif) {
+            // We received a new full hand of 9 cards.
+            this.playerHand.removeAll();
+
+            for ( var i in notif.args.cards) {
+                var card = notif.args.cards[i];
+                var color = card.type;
+                var value = card.type_arg;
+                this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id);
+            }
+        },
+
+        notif_playCard : function(notif) {
+            // Play a card on the table
+            this.playCardOnTable(notif.args.player_id, notif.args.color, notif.args.value, notif.args.card_id);
+        },
+
+        notif_trickWin : function(notif) {
+            // We do nothing here (just wait in order players can view the 4 cards played before they're gone.
+        },
+        notif_giveAllCardsToPlayer : function(notif) {
+            // Move all cards on table to given table, then destroy them
+            var winner_id = notif.args.player_id;
+            for ( var player_id in this.gamedatas.players) {
+                var anim = this.slideToObject('cardontable_' + player_id, 'overall_player_board_' + winner_id);
+                dojo.connect(anim, 'onEnd', function(node) {
+                    dojo.destroy(node);
+                });
+                anim.play();
+            }
+        },
+        notif_newScores : function(notif) {
+            // Update players' scores
+            for ( var player_id in notif.args.newScores) {
+                this.scoreCtrl[player_id].toValue(notif.args.newScores[player_id]);
+            }
+        },
    });             
 });
