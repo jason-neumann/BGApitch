@@ -45,4 +45,11 @@
         $this->game->playCard($card_id);
         self::ajaxResponse();
     }
+
+    public function bid(){
+        self::setAjaxMode();
+        $bidAmount = self::getArg("bidAmount", AT_posint, true);
+        $this->game->bid($bidAmount);
+        self::ajaxResponse();
+    }
   }

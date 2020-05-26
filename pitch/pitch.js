@@ -91,6 +91,8 @@ function (dojo, declare) {
                 var player_id = card.location_arg;
                 this.playCardOnTable(player_id, color, value, card.id);
             }
+
+            $("currentBid").innerHTML = "0";
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();

@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS `card` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 
--- Example 2: add a custom field to the standard "player" table
+-- add a field to track who the first player is
 ALTER TABLE `player` ADD `player_first` BOOLEAN NOT NULL DEFAULT '0';
 
+-- add the player's bid for this hand
+ALTER TABLE `player` ADD `player_bid` INT NOT NULL DEFAULT '0' COMMENT "value of the player's bid, -1 represents the player passed";

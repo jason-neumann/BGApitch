@@ -32,9 +32,10 @@ class Pitch extends Table
         // Note: afterwards, you can get/set the global variables with getGameStateValue/setGameStateInitialValue/setGameStateValue
         parent::__construct();
         self::initGameStateLabels(array( 
-            "trumpSuit" => 11, 
-            "alreadyPlayedTrump" => 12,
+            "trumpSuit" => 11,
+            "bidAmount" => 12,
             "trickSuit" => 13,
+            "whoWonBid" => 14,
         ));
 
         $this->cards = self::getNew( "module.common.deck" );
@@ -84,10 +85,7 @@ class Pitch extends Table
         self::setGameStateInitialValue( 'trumpSuit', 0 );
 
         // Set current trick suit to zero (= no trick suit)
-        self::setGameStateInitialValue( 'trickSuit', 0 );
-        
-        // Mark if we already played hearts during this hand
-        self::setGameStateInitialValue( 'alreadyPlayedTrump', 0 );       
+        self::setGameStateInitialValue( 'trickSuit', 0 );    
 
         // Create cards
         $cards = array ();
@@ -181,6 +179,20 @@ class Pitch extends Table
         (note: each method below must match an input method in pitch.action.php)
     */
 
+    function bid($bidAmount) {
+        self::checkAction("bid");
+        $player_id = self::getActivePlayerId();
+        if( self::getGameStateValue( 'bidAmount' ) < $bidAmount )
+            self::setGameStateValue( 'bidAmount', $bidAmount );
+        // And notify
+        self::notifyAllPlayers('bid', clienttranslate('${player_name} bids ' . $bidAmount), array (
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName()
+        ));
+        // Next player
+        $this->gamestate->nextState('bid');
+    }
+
     function playCard($card_id) {
         self::checkAction("playCard");
         $player_id = self::getActivePlayerId();
@@ -236,6 +248,11 @@ class Pitch extends Table
         }
         self::setGameStateValue('alreadyPlayedHearts', 0);
         $this->gamestate->nextState("");
+    }
+
+    function stNextBid() {
+        //activate next player OR start a new trick
+        $player_id = self::activeNextPlayer();
     }
 
     function stNewTrick() {

@@ -92,6 +92,11 @@
     height: 340px;
 }
 
+#currentBid {
+    width: 100px;
+    font-size: larger;
+}
+
 .playertablename {
     font-weight: bold;
 }
