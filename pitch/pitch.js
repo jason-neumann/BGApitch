@@ -91,8 +91,6 @@ function (dojo, declare) {
                 var player_id = card.location_arg;
                 this.playCardOnTable(player_id, color, value, card.id);
             }
-
-            $("currentBid").innerHTML = "0";
  
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
@@ -113,19 +111,12 @@ function (dojo, declare) {
             
             switch( stateName )
             {
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-           
-           
-            case 'dummmy':
+                case 'playerBid':
+                    //reset the bid, hide playing field, bring up bid values
+                    jQuery('#currentBid').html("0");
+                    jQuery('.playertable').hide();
+                    jQuery('.bidOptions').show();
+                    jQuery('#playertables').css('height','200px');
                 break;
             }
         },
@@ -329,6 +320,10 @@ function (dojo, declare) {
                 var value = card.type_arg;
                 this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id);
             }
+        },
+
+        notif_playerBid: function(notif) {
+            console.log('player bid something');
         },
 
         notif_playCard : function(notif) {

@@ -76,8 +76,8 @@ $machinestates = array(
         "description" => clienttranslate('${actplayer} must bid or pass.'),
         "descriptionmyturn" => clienttranslate('${you} must bid or pass.'),
         "type" => "activeplayer",
-        "possibleactions" => array( "bid" ),
-        "transitions" => array( "bid" => 22 )
+        "possibleactions" => array( "playerBid" ),
+        "transitions" => array( "nextBid" => 22 )
     ),
 
     22 => array(
@@ -85,7 +85,7 @@ $machinestates = array(
         "description" => 'Picking the next player to bid.',
         "type" => "game",
         "action" => "stNextBid",
-        "transitions" => array( "nextBid" => 21, "pickTrump" => 25 )
+        "transitions" => array( "playerBid" => 21, "pickTrump" => 25 )
     ),
 
     25 => array(

@@ -37,25 +37,36 @@
         </div>
     </div>
     <!-- END player -->
+    <div id="bidArea" class="bidArea">
+        Current Bid
+        <div id="currentBid">{CURRENT_BID}</div>
+    </div>
+    <div class="bidText">
+        How much would you like to bid?
+    </div>
+    <div class="bidOptions">
+        <div id="pass">Pass</div>
+        <div id="bid4">4</div>
+        <div id="bid5">5</div>
+        <div id="bid6">6</div>
+        <div id="bid7">7</div>
+    </div>
+</div>
 
-</div>
-<div id="bidArea">
-    Current Bid
-    <div id="currentBid"></div>
-</div>
 <div id="myhand_wrap" class="whiteblock">
     <h3>{MY_HAND}</h3>
     <div id="myhand">
     </div>
 </div>
 
+<script type="text/javascript" src= "https://code.jquery.com/jquery-3.5.1.min.js" />
 <script type="text/javascript">
+$.noConflict();
 
 // Javascript HTML templates
-
 var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px">\
                         </div>';
 
-</script>  
+</script>
 
 {OVERALL_GAME_FOOTER}

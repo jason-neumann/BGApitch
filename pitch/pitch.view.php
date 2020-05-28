@@ -55,6 +55,8 @@
         // this will make our My Hand text translatable
         $this->tpl['MY_HAND'] = self::_("My hand");
 
+        $this->tpl['CURRENT_BID'] = $this->game->getGameStateValue('bidAmount');
+
         /*
         
         // Examples: set the value of some element defined in your tpl file like this: {MY_VARIABLE_ELEMENT}

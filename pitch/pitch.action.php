@@ -46,10 +46,10 @@
         self::ajaxResponse();
     }
 
-    public function bid(){
+    public function playerBid(){
         self::setAjaxMode();
         $bidAmount = self::getArg("bidAmount", AT_posint, true);
-        $this->game->bid($bidAmount);
+        $this->game->playerBid($bidAmount);
         self::ajaxResponse();
     }
   }

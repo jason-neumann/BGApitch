@@ -87,6 +87,10 @@ class Pitch extends Table
         // Set current trick suit to zero (= no trick suit)
         self::setGameStateInitialValue( 'trickSuit', 0 );    
 
+        // Set current bid amount and who won bid to zero (= no one has bid yet)
+        self::setGameStateInitialValue( 'bidAmount', 0 );
+        self::setGameStateInitialValue( 'whoWonBid', 0 );    
+
         // Create cards
         $cards = array ();
         foreach ( $this->suits as $suitId => $suit ) {
@@ -104,7 +108,7 @@ class Pitch extends Table
         // Deal 9 cards to each players
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $cards = $this->cards->pickCards(9, 'deck', $player_id);
+            $cards = $this->cards->pickCards(2, 'deck', $player_id);
         } 
 
         // Activate first player (which is in general a good idea :) )
@@ -179,18 +183,19 @@ class Pitch extends Table
         (note: each method below must match an input method in pitch.action.php)
     */
 
-    function bid($bidAmount) {
-        self::checkAction("bid");
+    function playerBid($bidAmount) {
+        die('in player bid');
+        self::checkAction("playerBid");
         $player_id = self::getActivePlayerId();
         if( self::getGameStateValue( 'bidAmount' ) < $bidAmount )
             self::setGameStateValue( 'bidAmount', $bidAmount );
         // And notify
-        self::notifyAllPlayers('bid', clienttranslate('${player_name} bids ' . $bidAmount), array (
+        self::notifyAllPlayers('playerBid', clienttranslate('${player_name} bids ' . $bidAmount), array (
             'player_id' => $player_id,
             'player_name' => self::getActivePlayerName()
         ));
         // Next player
-        $this->gamestate->nextState('bid');
+        $this->gamestate->nextState('nextBid');
     }
 
     function playCard($card_id) {
@@ -242,11 +247,17 @@ class Pitch extends Table
         // Create deck, shuffle it and give 9 initial cards
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $cards = $this->cards->pickCards(9, 'deck', $player_id);
+            $cards = $this->cards->pickCards(2, 'deck', $player_id);
             // Notify player about his cards
             self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
         }
-        self::setGameStateValue('alreadyPlayedHearts', 0);
+
+        // reset hand info
+        self::setGameStateValue( 'trumpSuit', 0 );
+        self::setGameStateValue( 'trickSuit', 0 );
+        self::setGameStateValue( 'bidAmount', 0 );
+        self::setGameStateValue( 'whoWonBid', 0 );
+ 
         $this->gamestate->nextState("");
     }
 
@@ -350,7 +361,7 @@ class Pitch extends Table
 
         ///// Test if this is the end of the game
         foreach ( $newScores as $player_id => $score ) {
-            if ($score <= -100) {
+            if ($score <= -1000) {
                 // Trigger the end of the game !
                 $this->gamestate->nextState("endGame");
                 return;
