@@ -113,9 +113,12 @@ function (dojo, declare) {
             {
                 case 'playerBid':
                     //reset the bid, hide playing field, bring up bid values
-                    jQuery('#currentBid').html("0");
                     jQuery('.playertable').hide();
-                    jQuery('.bidOptions').show();
+                    if(this.isCurrentPlayerActive()) {
+                        jQuery('.bidOptions, .bidText').show();
+                    } else {
+                        jQuery('.bidOptions, .bidText').hide();
+                    }
                     jQuery('#playertables').css('height','200px');
                 break;
             }
