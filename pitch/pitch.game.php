@@ -22,6 +22,8 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class Pitch extends Table
 {
+    protected $suitIds = array('Clubs' => 1, 'Diamonds' => 2, 'Hearts' => 3, 'Spades' => 4);
+
 	function __construct( )
 	{
         // Your global variables labels:
@@ -197,6 +199,7 @@ class Pitch extends Table
                 'player_name' => self::getActivePlayerName()
             ));
         } else {
+        //TODO: add nofication when the player is last and won the bid
             self::notifyAllPlayers('playerBid', clienttranslate('${player_name} bids ' . $bidAmount), array (
                 'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
@@ -206,6 +209,19 @@ class Pitch extends Table
 
         // Next player
         $this->gamestate->nextState('nextBid');
+    }
+    
+    function setTrumpSuit($trumpSuit) {
+        self::checkAction("playerBid");
+        $player_id = self::getActivePlayerId();
+        
+        self::setGameStateValue('trumpSuit', $this->suitIds[$trumpSuit]);
+        self::notifyAllPlayers('trumpSelected', clienttranslate('${player_name} selected ${trumpSuit} as the trump suit.'), array (
+            'player_id' => $player_id,
+            'player_name' => self::getActivePlayerName(),
+            'trumpSuit' => $trumpSuit
+        ));
+        $this->gamestate->nextState('newTrick');
     }
 
     function playCard($card_id) {

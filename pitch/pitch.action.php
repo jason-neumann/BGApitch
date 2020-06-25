@@ -52,4 +52,11 @@
         $this->game->playerBid($bidAmount);
         self::ajaxResponse();
     }
+
+    public function selectTrump(){
+        self::setAjaxMode();
+        $trumpSuit = self::getArg("trumpSuit", AT_alphanum, true);
+        $this->game->setTrumpSuit($trumpSuit);
+        self::ajaxResponse();
+    }
   }

@@ -54,11 +54,8 @@ function (dojo, declare) {
             for( var player_id in gamedatas.players )
             {
                 var player = gamedatas.players[player_id];
-                         
-                // TODO: Setting up players boards if needed
             }
             
-            // TODO: Set up your game interface here, according to "gamedatas"
             // Player hand
             this.playerHand = new ebg.stock(); // new stock object for hand
             this.playerHand.create( this, $('myhand'), this.cardwidth, this.cardheight );
@@ -124,6 +121,14 @@ function (dojo, declare) {
                     }
                     jQuery('#playertables').css('height','200px');
                 break;
+                case 'pickTrump':
+                    jQuery('.playertable').show();
+                    jQuery('.bidOptions, .bidText').hide();
+                break;
+                case 'playerTurn':
+                    jQuery('.bidOptions, .bidText').hide();
+                break;
+                //TODO for state new hand set bid amount to zero
             }
         },
 
@@ -162,20 +167,13 @@ function (dojo, declare) {
                       
             if( this.isCurrentPlayerActive() )
             {            
-                switch( stateName )
-                {
-/*               
-                 Example:
- 
-                 case 'myGameState':
-                    
-                    // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
-                    break;
-*/
+                switch( stateName ) {
+                    case 'pickTrump':                    
+                        this.addActionButton( 'suitClubs', _('Clubs'), 'onSelectTrumpSuit' ); 
+                        this.addActionButton( 'suitDiamonds', _('Diamonds'), 'onSelectTrumpSuit' ); 
+                        this.addActionButton( 'suitHearts', _('Hearts'), 'onSelectTrumpSuit' ); 
+                        this.addActionButton( 'suitSpades', _('Spades'), 'onSelectTrumpSuit' ); 
+                        break;
                 }
             }
         },        
@@ -269,6 +267,21 @@ function (dojo, declare) {
                 // Can bid
                 this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
                     bidAmount : bid,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onSelectTrumpSuit : function(event) {
+            var suit = jQuery(event.target).attr('id').substring(4);
+
+            var action = 'selectTrump';
+            if (this.checkAction(action, true)) {
+                // Can bid
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
+                    trumpSuit : suit,
                     lock : true
                 }, this, function(result) {
                 }, function(is_error) {

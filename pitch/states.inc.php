@@ -94,7 +94,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} won the bid, select the trump suit.'),
         "type" => "activeplayer",
         "possibleactions" => array( "selectTrump" ),
-        "transitions" => array( "selectTrump" => 30 )
+        "transitions" => array( "newTrick" => 30 )
     ),
 
     // Trick    

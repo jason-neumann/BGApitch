@@ -25,6 +25,13 @@
     Please REMOVE this comment before publishing your game on BGA
 -->
 
+<script type="text/javascript">
+    //for some reason this is needed before the html renders because the variable is called when setting up the table
+    // Javascript HTML templates
+    var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px">\
+                            </div>';
+    
+</script>
 
 <div id="playertables">
 
@@ -62,11 +69,6 @@
 <script type="text/javascript" src= "https://code.jquery.com/jquery-3.5.1.min.js" />
 <script type="text/javascript">
 $.noConflict();
-
-// Javascript HTML templates
-var jstpl_cardontable = '<div class="cardontable" id="cardontable_${player_id}" style="background-position:-${x}px -${y}px">\
-                        </div>';
-
 </script>
 
 {OVERALL_GAME_FOOTER}
