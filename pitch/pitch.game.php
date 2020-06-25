@@ -184,16 +184,26 @@ class Pitch extends Table
     */
 
     function playerBid($bidAmount) {
-        die('in player bid');
         self::checkAction("playerBid");
         $player_id = self::getActivePlayerId();
+        $sql = "UPDATE player SET player_bid=$bidAmount  WHERE player_id='$player_id'";
+        self::DbQuery($sql);
         if( self::getGameStateValue( 'bidAmount' ) < $bidAmount )
             self::setGameStateValue( 'bidAmount', $bidAmount );
         // And notify
-        self::notifyAllPlayers('playerBid', clienttranslate('${player_name} bids ' . $bidAmount), array (
-            'player_id' => $player_id,
-            'player_name' => self::getActivePlayerName()
-        ));
+        if($bidAmount == -1) {
+            self::notifyAllPlayers('playerBid', clienttranslate('${player_name} passes'), array (
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName()
+            ));
+        } else {
+            self::notifyAllPlayers('playerBid', clienttranslate('${player_name} bids ' . $bidAmount), array (
+                'player_id' => $player_id,
+                'player_name' => self::getActivePlayerName(),
+                'bid_amt' => $bidAmount
+            ));
+        }
+
         // Next player
         $this->gamestate->nextState('nextBid');
     }
@@ -261,9 +271,37 @@ class Pitch extends Table
         $this->gamestate->nextState("");
     }
 
+    //figure out who gets to bid next OR let the winner select the trump suit
     function stNextBid() {
-        //activate next player OR start a new trick
-        $player_id = self::activeNextPlayer();
+        //run a query getting the players that have not passed
+        $sql = "SELECT * FROM `player` WHERE `player`.`player_bid` >= 0 ";
+        $results = self::DbQuery($sql);
+
+        $playersLeft = array();
+        foreach($results as $bidding_player) {
+            $playersLeft []= $bidding_player['player_id'];
+        }
+
+        $nextPlayerFound = FALSE;
+        $player_id = self::getActivePlayerId();
+        if(count($playersLeft) == 1 && $playersLeft[0] == $player_id) {
+            //start a new trick
+            $this->gamestate->nextState('pickTrump');
+        } else {
+            while (!$nextPlayerFound) {
+                $nextPlayer = self::getPlayerAfter($player_id);
+                if(in_array($nextPlayer, $playersLeft)) {
+                    $this->gamestate->changeActivePlayer($nextPlayer);
+                    $nextPlayerFound = TRUE;
+                    break;
+                }
+                $player_id = $nextPlayer;
+            }
+        }
+
+        if($nextPlayerFound) {
+            $this->gamestate->nextState('playerBid');
+        }
     }
 
     function stNewTrick() {

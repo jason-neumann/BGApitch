@@ -48,7 +48,7 @@
 
     public function playerBid(){
         self::setAjaxMode();
-        $bidAmount = self::getArg("bidAmount", AT_posint, true);
+        $bidAmount = self::getArg("bidAmount", AT_int, true);
         $this->game->playerBid($bidAmount);
         self::ajaxResponse();
     }

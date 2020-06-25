@@ -90,7 +90,7 @@ $machinestates = array(
 
     25 => array(
         "name" => "pickTrump",
-        "description" => clienttranslate('${actplayer} won the bid, select the trump suit.'),
+        "description" => clienttranslate('${actplayer} won the bid and will now select the trump suit.'),
         "descriptionmyturn" => clienttranslate('${you} won the bid, select the trump suit.'),
         "type" => "activeplayer",
         "possibleactions" => array( "selectTrump" ),

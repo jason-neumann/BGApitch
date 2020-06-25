@@ -92,6 +92,9 @@ function (dojo, declare) {
                 this.playCardOnTable(player_id, color, value, card.id);
             }
  
+            //bid options
+            dojo.connect($('bidOptions'), 'onclick', this, 'onBidOptionSelectionChanged');
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
@@ -255,6 +258,24 @@ function (dojo, declare) {
             }
         },
 
+        onBidOptionSelectionChanged : function(event) {
+            var bid = event.target.innerHTML;
+
+            if (bid == 'Pass') {
+                bid = -1;
+            }
+            var action = 'playerBid';
+            if (this.checkAction(action, true)) {
+                // Can bid
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
+                    bidAmount : bid,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
         /* Example:
         
         onMyMethodToCall1: function( evt )
@@ -308,6 +329,7 @@ function (dojo, declare) {
             dojo.subscribe('newHand', this, "notif_newHand");
             dojo.subscribe('playCard', this, "notif_playCard");
             dojo.subscribe( 'trickWin', this, "notif_trickWin" );
+            dojo.subscribe( 'playerBid', this, "notif_playerBid" );
             this.notifqueue.setSynchronous( 'trickWin', 1000 );
             dojo.subscribe( 'giveAllCardsToPlayer', this, "notif_giveAllCardsToPlayer" );
             dojo.subscribe( 'newScores', this, "notif_newScores" );
@@ -326,7 +348,9 @@ function (dojo, declare) {
         },
 
         notif_playerBid: function(notif) {
-            console.log('player bid something');
+            if(notif.args.bid_amt > 0) {
+                jQuery('#currentBid').html(notif.args.bid_amt);
+            }
         },
 
         notif_playCard : function(notif) {

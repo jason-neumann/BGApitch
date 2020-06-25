@@ -44,7 +44,7 @@
     <div class="bidText">
         How much would you like to bid?
     </div>
-    <div class="bidOptions">
+    <div class="bidOptions" id="bidOptions">
         <div id="pass">Pass</div>
         <div id="bid4">4</div>
         <div id="bid5">5</div>
