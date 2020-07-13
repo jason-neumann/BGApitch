@@ -110,7 +110,7 @@ class Pitch extends Table
         // Deal 9 cards to each players
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $cards = $this->cards->pickCards(2, 'deck', $player_id);
+            $cards = $this->cards->pickCards(9, 'deck', $player_id);
         } 
 
         // Activate first player (which is in general a good idea :) )
@@ -212,7 +212,7 @@ class Pitch extends Table
     }
     
     function setTrumpSuit($trumpSuit) {
-        self::checkAction("playerBid");
+        self::checkAction("selectTrump");
         $player_id = self::getActivePlayerId();
         
         self::setGameStateValue('trumpSuit', $this->suitIds[$trumpSuit]);
@@ -221,7 +221,37 @@ class Pitch extends Table
             'player_name' => self::getActivePlayerName(),
             'trumpSuit' => $trumpSuit
         ));
-        $this->gamestate->nextState('newTrick');
+        $this->gamestate->nextState('discardDown');
+    }
+
+    function discardCards($cardList) {
+        self::checkAction("discardCards");
+        $numCardsDiscarded = count($cardList);
+        $player_id = self::getActivePlayerId();
+        $players = self::loadPlayersBasicInfos();
+
+        foreach($cardList as $card) {
+            $this->cards->moveCard($card->id, 'discard');
+        }
+
+        if($player_id == self::getGameStateValue('whoWonBid')) {
+            self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} discards the useless parts of the widdow'), array(
+                'player_id' => $player_id,
+                'player_name' => $players[ $player_id ]['player_name']
+            ) ); 
+            $this->gamestate->nextState('newTrick');
+            return;
+        }elseif($numCardsDiscarded > -3) {
+            $numDrawn = 9 - $numCardsDiscarded;
+            $this->cards->pickCards($numDrawn, 'deck', $player_id);
+        } else {
+            $numDrawn = 0;
+        }
+        self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} draws ' . $numDrawn), array(
+            'player_id' => $player_id,
+            'player_name' => $players[ $player_id ]['player_name']
+        ) ); 
+        $this->gamestate->nextState('nextDiscard'); 
     }
 
     function playCard($card_id) {
@@ -273,7 +303,7 @@ class Pitch extends Table
         // Create deck, shuffle it and give 9 initial cards
         $players = self::loadPlayersBasicInfos();
         foreach ( $players as $player_id => $player ) {
-            $cards = $this->cards->pickCards(2, 'deck', $player_id);
+            $cards = $this->cards->pickCards(9, 'deck', $player_id);
             // Notify player about his cards
             self::notifyPlayer($player_id, 'newHand', '', array ('cards' => $cards ));
         }
@@ -302,6 +332,7 @@ class Pitch extends Table
         $player_id = self::getActivePlayerId();
         if(count($playersLeft) == 1 && $playersLeft[0] == $player_id) {
             //start a new trick
+            self::setGameStateValue('whoWonBid', $player_id);
             $this->gamestate->nextState('pickTrump');
         } else {
             while (!$nextPlayerFound) {
@@ -318,6 +349,63 @@ class Pitch extends Table
         if($nextPlayerFound) {
             $this->gamestate->nextState('playerBid');
         }
+    }
+
+    function stNextDiscard() {
+        //get count of cards in all users hands. 
+        $cardCount = $this->cards->countCardsByLocationArgs( 'hand' );
+        /*
+        RETRY:
+        case 1: nextactive won bid
+            if all other players have 6 cards
+                give all cards in deck to bid winner and activeNextPlayer() nextState 'discardDown'
+            else 
+                getplayerafter nextactiveplayer and changeActivePlayer to them nextState 'discardDown'
+        case 2: nextactive didn't win bid
+            activeNextPlayer nextState 'discardDown'
+
+            */
+        $nextPlayerId = self::getPlayerAfter(self::getActivePlayerId());
+        if($nextPlayerId == self::getGameStateValue('whoWonBid')) {
+            $allOthersDiscarded = TRUE;
+            foreach($this->cards->countCardsByLocationArgs('hand') as $playerId => $cardCount) {
+                if($cardCount > 6 && $nextPlayerId != $playerId) {
+                    $allOthersDiscarded = FALSE;
+                }
+            }
+            if($allOthersDiscarded) {
+                $this->cards->pickCards($this->cards->countCardByLocation('deck'), 'deck', $nextPlayerId);
+                $this->activeNextPlayer();
+            } else {
+                $this->gamestate->changeActivePlayer(self::getPlayerAfter($nextPlayerId));
+            }
+        } else {
+            $this->activeNextPlayer();
+        }
+        $this->gamestate->nextState('discardDown');
+        /*
+        case 1: nextActivePlayer card count > 6 and they didn't win bid
+            activeNextPlayer
+        case 2: nextActivePlayer card count > 6 and they did win bid
+            getplayerafter nextactiveplayer and changeActivePlayer to them
+        case 3: nextactiveplayer card cound == 6
+            get who won bid, give them all remaining cards and changeActivePlayer To them
+
+        $nextPlayerId = self::getPlayerAfter(self::getActivePlayerId());
+        $cardCount = $this->cards->countCardsByLocationArgs('hand', $nextPlayerId);
+        $winningBidderId = self::getGameStateValue('whoWonBid');
+        if($cardCount > 6){
+            if($nextPlayerId != $winningBidderId) {
+                $this->activeNextPlayer();
+                $this->gamestate->nextState('playerBid');
+            } else {
+                $this->gamestate->changeActivePlayer(self::getPlayerAfter($nextPlayerId));
+            }
+        } else {
+            //all cards 
+        }
+*/
+
     }
 
     function stNewTrick() {

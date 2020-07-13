@@ -108,9 +108,12 @@ function (dojo, declare) {
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName );
-            
+            jQuery('.playertable').show();
+            jQuery('.bidOptions, .bidText').hide();
+            jQuery('#playertables').css('height','340px');
+                
             switch( stateName )
-            {
+            {    
                 case 'playerBid':
                     //reset the bid, hide playing field, bring up bid values
                     jQuery('.playertable').hide();
@@ -120,13 +123,6 @@ function (dojo, declare) {
                         jQuery('.bidOptions, .bidText').hide();
                     }
                     jQuery('#playertables').css('height','200px');
-                break;
-                case 'pickTrump':
-                    jQuery('.playertable').show();
-                    jQuery('.bidOptions, .bidText').hide();
-                break;
-                case 'playerTurn':
-                    jQuery('.bidOptions, .bidText').hide();
                 break;
                 //TODO for state new hand set bid amount to zero
             }
@@ -173,6 +169,9 @@ function (dojo, declare) {
                         this.addActionButton( 'suitDiamonds', _('Diamonds'), 'onSelectTrumpSuit' ); 
                         this.addActionButton( 'suitHearts', _('Hearts'), 'onSelectTrumpSuit' ); 
                         this.addActionButton( 'suitSpades', _('Spades'), 'onSelectTrumpSuit' ); 
+                        break;
+                    case 'discardDown':
+                        this.addActionButton( 'discardDown', _('Discard'), 'onDiscardConfirm');
                         break;
                 }
             }
@@ -248,7 +247,7 @@ function (dojo, declare) {
                     });
 
                     this.playerHand.unselectAll();
-                } else if (this.checkAction('giveCards')) {
+                } else if (this.checkAction('discardCards')) {
                     // Can give cards => let the player select some cards
                 } else {
                     this.playerHand.unselectAll();
@@ -282,6 +281,19 @@ function (dojo, declare) {
                 // Can bid
                 this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
                     trumpSuit : suit,
+                    lock : true
+                }, this, function(result) {
+                }, function(is_error) {
+                });
+            }
+        },
+
+        onDiscardConfirm: function(event) {
+            var action = 'discardCards';
+            if (this.checkAction(action, true)) {
+                // Can discard
+                this.ajaxcall("/" + this.game_name + "/" + this.game_name + "/" + action + ".html", {
+                    cards : btoa(JSON.stringify(this.playerHand.getSelectedItems())),
                     lock : true
                 }, this, function(result) {
                 }, function(is_error) {

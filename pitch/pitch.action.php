@@ -46,6 +46,13 @@
         self::ajaxResponse();
     }
 
+    public function discardCards() {
+        self::setAjaxMode();
+        $cardList = json_decode(base64_decode(self::getArg("cards", AT_base64)));
+        $this->game->discardCards($cardList);
+        self::ajaxResponse();
+    }
+
     public function playerBid(){
         self::setAjaxMode();
         $bidAmount = self::getArg("bidAmount", AT_int, true);
