@@ -226,7 +226,7 @@ class Pitch extends Table
 
     function discardCards($cardList) {
         self::checkAction("discardCards");
-        $numCardsDiscarded = count($cardList);
+        $numCardsInHand = 9 - count($cardList);
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
 
@@ -241,16 +241,21 @@ class Pitch extends Table
             ) ); 
             $this->gamestate->nextState('newTrick');
             return;
-        }elseif($numCardsDiscarded > -3) {
-            $numDrawn = 9 - $numCardsDiscarded;
+        }elseif($numCardsInHand < 6) {
+            $numDrawn = 6 - $numCardsInHand;
             $this->cards->pickCards($numDrawn, 'deck', $player_id);
+            self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} draws ' . $numDrawn), array(
+                'player_id' => $player_id,
+                'player_name' => $players[ $player_id ]['player_name']
+            ) );
         } else {
             $numDrawn = 0;
+            self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} didn\'t need any cards!'), array(
+                'player_id' => $player_id,
+                'player_name' => $players[ $player_id ]['player_name']
+            ) ); 
         }
-        self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} draws ' . $numDrawn), array(
-            'player_id' => $player_id,
-            'player_name' => $players[ $player_id ]['player_name']
-        ) ); 
+    
         $this->gamestate->nextState('nextDiscard'); 
     }
 
@@ -330,6 +335,8 @@ class Pitch extends Table
 
         $nextPlayerFound = FALSE;
         $player_id = self::getActivePlayerId();
+        //TODO: there's a bug here where the player that's left has already bid,
+        //might need to add a case for when the bid amount is > 0 to go straight to pick trump
         if(count($playersLeft) == 1 && $playersLeft[0] == $player_id) {
             //start a new trick
             self::setGameStateValue('whoWonBid', $player_id);
@@ -351,20 +358,23 @@ class Pitch extends Table
         }
     }
 
+    function stFirstToDiscard() {
+        $player_id = self::getActivePlayerId();
+        $playerOrder = self::getNextPlayerTable();
+        //if the first player is the player that won trump, the next player is set as active, otherwise the first player becomes active
+        if($playerOrder[0] == $player_id) {
+            $this->gamestate->changeActivePlayer($playerOrder[$player_id]);
+        } else {
+            $this->gamestate->changeActivePlayer($playerOrder[0]);
+        }
+        $this->gamestate->nextState();
+    }
+
     function stNextDiscard() {
         //get count of cards in all users hands. 
         $cardCount = $this->cards->countCardsByLocationArgs( 'hand' );
-        /*
-        RETRY:
-        case 1: nextactive won bid
-            if all other players have 6 cards
-                give all cards in deck to bid winner and activeNextPlayer() nextState 'discardDown'
-            else 
-                getplayerafter nextactiveplayer and changeActivePlayer to them nextState 'discardDown'
-        case 2: nextactive didn't win bid
-            activeNextPlayer nextState 'discardDown'
-
-            */
+        //TODO there might be an issue here where the everyone else has discarded down but the dealer still gets skipped
+        //and a player gets to discard a 2nd time
         $nextPlayerId = self::getPlayerAfter(self::getActivePlayerId());
         if($nextPlayerId == self::getGameStateValue('whoWonBid')) {
             $allOthersDiscarded = TRUE;
@@ -374,7 +384,7 @@ class Pitch extends Table
                 }
             }
             if($allOthersDiscarded) {
-                $this->cards->pickCards($this->cards->countCardByLocation('deck'), 'deck', $nextPlayerId);
+                $this->cards->pickCards($this->cards->countCardInLocation('deck'), 'deck', $nextPlayerId);
                 $this->activeNextPlayer();
             } else {
                 $this->gamestate->changeActivePlayer(self::getPlayerAfter($nextPlayerId));
@@ -467,6 +477,7 @@ class Pitch extends Table
     }
 
     function stEndHand() {
+        //TODO: move first player to the next person in order
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
         // Gets all "hearts" + queen of spades
