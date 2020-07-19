@@ -233,6 +233,7 @@ class Pitch extends Table
 
     function discardCards($cardList) {
         self::checkAction("discardCards");
+        //TODO:10 ensure point cards aren't discarded
         $numCardsInHand = 9 - count($cardList);
         $player_id = self::getActivePlayerId();
         $players = self::loadPlayersBasicInfos();
@@ -329,7 +330,10 @@ class Pitch extends Table
         self::setGameStateValue( 'trickSuit', 0 );
         self::setGameStateValue( 'bidAmount', 0 );
         self::setGameStateValue( 'whoWonBid', 0 );
-        //TODO:2 reset everyones bids
+
+        //reset everyones bids
+        $sql = "UPDATE player SET player_bid = 0 ";
+        self::DbQuery($sql);
  
         $this->gamestate->nextState("");
     }
@@ -385,7 +389,7 @@ class Pitch extends Table
     function stNextDiscard() {
         //get count of cards in all users hands. 
         $cardCount = $this->cards->countCardsByLocationArgs( 'hand' );
-        //TODO:9 there might be an issue here where the everyone else has discarded down but the dealer still gets skipped
+        //TODO:5 there is an issue here where the everyone else has discarded down but the dealer still gets skipped
         //and a player gets to discard a 2nd time
         $nextPlayerId = self::getPlayerAfter(self::getActivePlayerId());
         if($nextPlayerId == self::getGameStateValue('whoWonBid')) {
@@ -446,6 +450,7 @@ class Pitch extends Table
             $best_value = 0;
             $best_value_player_id = null;
             foreach ( $cards_on_table as $card ) {
+                //TODO:4 2 of trump suit goes to whoever played it, not winner of round
                 // Note: type = card color
                 if ($card ['type'] == self::getGameStateValue('trickSuit')) {
                     if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
