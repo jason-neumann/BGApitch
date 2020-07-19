@@ -355,6 +355,9 @@ function (dojo, declare) {
             dojo.subscribe('playCard', this, "notif_playCard");
             dojo.subscribe( 'trickWin', this, "notif_trickWin" );
             dojo.subscribe( 'playerBid', this, "notif_playerBid" );
+            dojo.subscribe( 'trumpSelected', this, "notif_trumpSelected" );
+            dojo.subscribe( 'discardCards', this, "notif_discardCards" );
+            dojo.subscribe( 'drawUp', this, "notif_drawUp" );
             this.notifqueue.setSynchronous( 'trickWin', 1000 );
             dojo.subscribe( 'giveAllCardsToPlayer', this, "notif_giveAllCardsToPlayer" );
             dojo.subscribe( 'newScores', this, "notif_newScores" );
@@ -375,6 +378,25 @@ function (dojo, declare) {
         notif_playerBid: function(notif) {
             if(notif.args.bid_amt > 0) {
                 jQuery('#currentBid').html(notif.args.bid_amt);
+            }
+        },
+
+        notif_trumpSelected: function(notif) {
+            jQuery('#trumpSuitValue').html(notif.args.trumpSuit);
+        },
+
+        notif_discardCards: function(notif) {
+            for ( var discardedCard in notif.args.discardList) {
+                this.playerHand.removeFromStockById(notif.args.discardList[discardedCard].id, 'overall_player_board_' + this.getCurrentPlayerId());
+            }
+        },
+
+        notif_drawUp : function(notif) {
+            for ( var i in notif.args.cards) {
+                var card = notif.args.cards[i];
+                var color = card.type;
+                var value = card.type_arg;
+                this.playerHand.addToStockWithId(this.getCardUniqueId(color, value), card.id);
             }
         },
 

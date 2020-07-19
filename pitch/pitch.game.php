@@ -22,7 +22,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class Pitch extends Table
 {
-    protected $suitIds = array('Clubs' => 1, 'Diamonds' => 2, 'Hearts' => 3, 'Spades' => 4);
+    protected $suitIds = array('Spades' => 1, 'Hearts' => 2, 'Clubs' => 3, 'Diamonds' => 4);
 
 	function __construct( )
 	{
@@ -94,6 +94,7 @@ class Pitch extends Table
         self::setGameStateInitialValue( 'whoWonBid', 0 );    
 
         // Create cards
+        //TODO: add jokers to deck
         $cards = array ();
         foreach ( $this->suits as $suitId => $suit ) {
             // spade, heart, diamond, club
@@ -235,18 +236,21 @@ class Pitch extends Table
         }
 
         if($player_id == self::getGameStateValue('whoWonBid')) {
-            self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} discards the useless parts of the widdow'), array(
+            self::notifyAllPlayers( 'discardCards', clienttranslate('${player_name} discards the useless parts of the widdow'), array(
                 'player_id' => $player_id,
-                'player_name' => $players[ $player_id ]['player_name']
+                'player_name' => $players[ $player_id ]['player_name'],
+                'discardList' => $cardList
             ) ); 
             $this->gamestate->nextState('newTrick');
             return;
         }elseif($numCardsInHand < 6) {
             $numDrawn = 6 - $numCardsInHand;
-            $this->cards->pickCards($numDrawn, 'deck', $player_id);
-            self::notifyAllPlayers( 'discarded', clienttranslate('${player_name} draws ' . $numDrawn), array(
+            $drawnCards = $this->cards->pickCards($numDrawn, 'deck', $player_id);
+            self::notifyPlayer($player_id, 'drawUp', '', array ('cards' => $drawnCards ));
+            self::notifyAllPlayers( 'discardCards', clienttranslate('${player_name} draws ' . $numDrawn), array(
                 'player_id' => $player_id,
-                'player_name' => $players[ $player_id ]['player_name']
+                'player_name' => $players[ $player_id ]['player_name'],
+                'discardList' => $cardList
             ) );
         } else {
             $numDrawn = 0;
@@ -263,7 +267,7 @@ class Pitch extends Table
         self::checkAction("playCard");
         $player_id = self::getActivePlayerId();
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
-        // XXX check rules here
+        //TODO: implement rules that force playing on suit if the player can
         $currentCard = $this->cards->getCard($card_id);
         if( self::getGameStateValue( 'trickSuit' ) == 0 )
             self::setGameStateValue( 'trickSuit', $currentCard['type'] );
@@ -318,6 +322,7 @@ class Pitch extends Table
         self::setGameStateValue( 'trickSuit', 0 );
         self::setGameStateValue( 'bidAmount', 0 );
         self::setGameStateValue( 'whoWonBid', 0 );
+        //TODO: reset everyones bids
  
         $this->gamestate->nextState("");
     }
@@ -384,7 +389,8 @@ class Pitch extends Table
                 }
             }
             if($allOthersDiscarded) {
-                $this->cards->pickCards($this->cards->countCardInLocation('deck'), 'deck', $nextPlayerId);
+                $cards = $this->cards->pickCards($this->cards->countCardInLocation('deck'), 'deck', $nextPlayerId);
+                self::notifyPlayer($nextPlayerId, 'drawUp', '', array ('cards' => $cards ));
                 $this->activeNextPlayer();
             } else {
                 $this->gamestate->changeActivePlayer(self::getPlayerAfter($nextPlayerId));
