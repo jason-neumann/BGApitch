@@ -193,6 +193,7 @@ class Pitch extends Table
     */
 
     function playerBid($bidAmount) {
+        //TODO: 20 add shooting the moon to bid options
         self::checkAction("playerBid");
         $player_id = self::getActivePlayerId();
         $sql = "UPDATE player SET player_bid=$bidAmount  WHERE player_id='$player_id'";
@@ -275,7 +276,7 @@ class Pitch extends Table
         self::checkAction("playCard");
         $player_id = self::getActivePlayerId();
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
-        //TODO:3 implement rules that force playing on suit if the player can
+        //TODO:3 implement rules that force playing on trick suit if the player can
         $currentCard = $this->cards->getCard($card_id);
         if( self::getGameStateValue( 'trickSuit' ) == 0 )
             self::setGameStateValue( 'trickSuit', $currentCard['type'] );
@@ -451,6 +452,7 @@ class Pitch extends Table
             $best_value_player_id = null;
             foreach ( $cards_on_table as $card ) {
                 //TODO:4 2 of trump suit goes to whoever played it, not winner of round
+                //TODO:3 trump suit (not trick suit) should be considered the "best value", then trick suit if a trump card isn't played
                 // Note: type = card color
                 if ($card ['type'] == self::getGameStateValue('trickSuit')) {
                     if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
@@ -496,35 +498,71 @@ class Pitch extends Table
 
     function stEndHand() {
         //TODO:15 move first player to the next person in order
-        //TODO:2 completely redo scoring
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
-        // Gets all "hearts" + queen of spades
 
         $player_to_points = array ();
         foreach ( $players as $player_id => $player ) {
             $player_to_points [$player_id] = 0;
         }
         $cards = $this->cards->getCardsInLocation("cardswon");
+         //get off suit id for counting Jack of the off suit
+         switch (self::getGameStateValue('trumpSuit')) {
+            case 1:
+                $offSuit = 3;
+                break;
+            case 2:
+                $offSuit = 4;
+                break;
+            case 3:
+                $offSuit = 1;
+                break;
+            case 4:
+                $offSuit = 2;
+                break;
+        }
+
         foreach ( $cards as $card ) {
             $player_id = $card ['location_arg'];
-            // Note: 2 = heart
-            if ($card ['type'] == 2) {
+            if ($card ['type'] == self::getGameStateValue('trumpSuit')) {
+                //Ace, Jack, 10 and 2 on suit get points
+                switch ($card['type_arg']) {
+                    case '14':
+                    case '11':
+                    case '10':
+                    case '2':
+                        $player_to_points [$player_id] ++;
+                        break;
+                }
+            } elseif ($card['type'] == 5){
+                //big and little joker get points
+                $player_to_points [$player_id] ++;
+            } elseif ($card['type'] == $offSuit && $card['type_arg'] == 11) {
+                //Jack of off suit gets a point
                 $player_to_points [$player_id] ++;
             }
         }
+        //add in the points of each player's partner (the person sitting opposite them)
+        foreach($player_to_points as $playerId => $points) {
+            $teamPoints[$playerId] = $points + $player_to_points[self::getPlayerAfter(self::getPlayerAfter($playerId))];
+        }
+
+        //check to see if who won the bid got enough points
+        if($teamPoints[self::getGameStateValue('whoWonBid')] < self::getGameStateValue('bidAmount')){
+            $teamPoints[self::getGameStateValue('whoWonBid')] = 0 - self::getGameStateValue('bidAmount');
+            $teamPoints[self::getPlayerAfter(self::getPlayerAfter(self::getGameStateValue('whoWonBid')))] = 0 - self::getGameStateValue('bidAmount');
+        }
         // Apply scores to player
-        foreach ( $player_to_points as $player_id => $points ) {
+        foreach ( $teamPoints as $player_id => $points ) {
             if ($points != 0) {
-                $sql = "UPDATE player SET player_score=player_score-$points  WHERE player_id='$player_id'";
+                $sql = "UPDATE player SET player_score=player_score+$points  WHERE player_id='$player_id'";
                 self::DbQuery($sql);
-                $heart_number = $player_to_points [$player_id];
-                self::notifyAllPlayers("points", clienttranslate('${player_name} gets ${nbr} hearts and looses ${nbr} points'), array (
+                self::notifyAllPlayers("points", clienttranslate('${player_name} gets ${nbr} points'), array (
                         'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'],
-                        'nbr' => $heart_number ));
+                        'nbr' => $points ));
             } else {
                 // No point lost (just notify)
-                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any hearts'), array (
+                self::notifyAllPlayers("points", clienttranslate('${player_name} did not get any points'), array (
                         'player_id' => $player_id,'player_name' => $players [$player_id] ['player_name'] ));
             }
         }
@@ -533,13 +571,12 @@ class Pitch extends Table
 
         ///// Test if this is the end of the game
         foreach ( $newScores as $player_id => $score ) {
-            if ($score <= -1000) {
+            if ($score >= 21 ) {
                 // Trigger the end of the game !
                 $this->gamestate->nextState("endGame");
                 return;
             }
         }
-
         
         $this->gamestate->nextState("nextHand");
     }
