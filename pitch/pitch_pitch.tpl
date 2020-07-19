@@ -44,7 +44,10 @@
         </div>
     </div>
     <!-- END player -->
-    <!--TODO add the display of the current trump suit-->
+    <div id="trumpSuit">
+        Trump Suit
+        <span id="trumpSuitValue">{TRUMP_SUIT}</span>
+    </div>
     <div id="bidArea" class="bidArea">
         Current Bid
         <div id="currentBid">{CURRENT_BID}</div>

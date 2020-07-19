@@ -57,6 +57,11 @@
 
         $this->tpl['CURRENT_BID'] = $this->game->getGameStateValue('bidAmount');
 
+        if($this->game->getGameStateValue('trumpSuit')) {
+            $this->tpl['TRUMP_SUIT'] = $this->game->suits[$this->game->getGameStateValue('trumpSuit')]['name'];                        
+        } else {
+            $this->tpl['TRUMP_SUIT'] = 'None';
+        }
         /*
         
         // Examples: set the value of some element defined in your tpl file like this: {MY_VARIABLE_ELEMENT}
