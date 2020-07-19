@@ -27,7 +27,9 @@ $this->suits = array(
   3 => array( 'name' => clienttranslate('club'),
               'nametr' => self::_('club') ),
   4 => array( 'name' => clienttranslate('diamond'),
-              'nametr' => self::_('diamond') )
+              'nametr' => self::_('diamond') ),
+  5 => array( 'name' => clienttranslate('joker'),
+              'nametr' => self::_('joker') )
 );
 
 $this->values_label = array(
@@ -43,5 +45,7 @@ $this->values_label = array(
   11 => clienttranslate('J'),
   12 => clienttranslate('Q'),
   13 => clienttranslate('K'),
-  14 => clienttranslate('A')
+  14 => clienttranslate('A'),
+  15 => clienttranslate('Big'),
+  16 => clienttranslate('Little'),
 );

@@ -22,7 +22,7 @@ require_once( APP_GAMEMODULE_PATH.'module/table/table.game.php' );
 
 class Pitch extends Table
 {
-    protected $suitIds = array('Spades' => 1, 'Hearts' => 2, 'Clubs' => 3, 'Diamonds' => 4);
+    protected $suitIds = array('Spades' => 1, 'Hearts' => 2, 'Clubs' => 3, 'Diamonds' => 4, 'Jokers' => 5);
 
 	function __construct( )
 	{
@@ -59,6 +59,7 @@ class Pitch extends Table
     */
     protected function setupNewGame( $players, $options = array() )
     {    
+        //TODO:30 figure out how to select teams, it may just be the person creating has to invite in a certain order
         // Set the colors of the players with HTML color code
         // The default below is red/green/blue/orange/brown
         // The number of colors defined here must correspond to the maximum number of players allowed for the gams
@@ -94,13 +95,18 @@ class Pitch extends Table
         self::setGameStateInitialValue( 'whoWonBid', 0 );    
 
         // Create cards
-        //TODO:1 add jokers to deck
         $cards = array ();
         foreach ( $this->suits as $suitId => $suit ) {
-            // spade, heart, diamond, club
-            for ($value = 2; $value <= 14; $value ++) {
-                //  2, 3, 4, ... K, A
-                $cards [] = array ('type' => $suitId,'type_arg' => $value,'nbr' => 1 );
+            if($suit == 'Jokers') {
+                //big and little jokers
+                $cards [] = array ('type' => $suitId,'type_arg' => 15,'nbr' => 1 );
+                $cards [] = array ('type' => $suitId,'type_arg' => 16,'nbr' => 1 );
+            } else {
+                // spade, heart, diamond, club
+                for ($value = 2; $value <= 14; $value ++) {
+                    //  2, 3, 4, ... K, A
+                    $cards [] = array ('type' => $suitId,'type_arg' => $value,'nbr' => 1 );
+                }
             }
         }
         
@@ -236,6 +242,7 @@ class Pitch extends Table
         }
 
         if($player_id == self::getGameStateValue('whoWonBid')) {
+            //TODO:8 add check to ensure player only has 6 cards in hand (copy to else condition and add javascript check)
             self::notifyAllPlayers( 'discardCards', clienttranslate('${player_name} discards the useless parts of the widdow'), array(
                 'player_id' => $player_id,
                 'player_name' => $players[ $player_id ]['player_name'],
@@ -484,6 +491,7 @@ class Pitch extends Table
 
     function stEndHand() {
         //TODO:15 move first player to the next person in order
+        //TODO:2 completely redo scoring
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
         // Gets all "hearts" + queen of spades

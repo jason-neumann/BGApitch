@@ -69,6 +69,12 @@ function (dojo, declare) {
                     this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', card_type_id);
                 }
             }
+            //add big Joker
+            var card_type_id = this.getCardUniqueId(5, 15);
+            this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', 52);
+            //add little Joker
+            var card_type_id = this.getCardUniqueId(5, 16);
+            this.playerHand.addItemType(card_type_id, card_type_id, g_gamethemeurl + 'img/cards.jpg', 53);
 
             dojo.connect( this.playerHand, 'onChangeSelection', this, 'onPlayerHandSelectionChanged' );
 
