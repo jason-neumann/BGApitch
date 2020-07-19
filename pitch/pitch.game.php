@@ -94,7 +94,7 @@ class Pitch extends Table
         self::setGameStateInitialValue( 'whoWonBid', 0 );    
 
         // Create cards
-        //TODO: add jokers to deck
+        //TODO:1 add jokers to deck
         $cards = array ();
         foreach ( $this->suits as $suitId => $suit ) {
             // spade, heart, diamond, club
@@ -161,7 +161,7 @@ class Pitch extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
+        // TODO:99 compute and return the game progression
 
         return 0;
     }
@@ -200,7 +200,7 @@ class Pitch extends Table
                 'player_name' => self::getActivePlayerName()
             ));
         } else {
-        //TODO: add nofication when the player is last and won the bid
+        //TODO:5 add nofication when the player is last and won the bid
             self::notifyAllPlayers('playerBid', clienttranslate('${player_name} bids ' . $bidAmount), array (
                 'player_id' => $player_id,
                 'player_name' => self::getActivePlayerName(),
@@ -267,7 +267,7 @@ class Pitch extends Table
         self::checkAction("playCard");
         $player_id = self::getActivePlayerId();
         $this->cards->moveCard($card_id, 'cardsontable', $player_id);
-        //TODO: implement rules that force playing on suit if the player can
+        //TODO:3 implement rules that force playing on suit if the player can
         $currentCard = $this->cards->getCard($card_id);
         if( self::getGameStateValue( 'trickSuit' ) == 0 )
             self::setGameStateValue( 'trickSuit', $currentCard['type'] );
@@ -322,7 +322,7 @@ class Pitch extends Table
         self::setGameStateValue( 'trickSuit', 0 );
         self::setGameStateValue( 'bidAmount', 0 );
         self::setGameStateValue( 'whoWonBid', 0 );
-        //TODO: reset everyones bids
+        //TODO:2 reset everyones bids
  
         $this->gamestate->nextState("");
     }
@@ -340,7 +340,7 @@ class Pitch extends Table
 
         $nextPlayerFound = FALSE;
         $player_id = self::getActivePlayerId();
-        //TODO: there's a bug here where the player that's left has already bid,
+        //TODO:3 there's a bug here where the player that's left has already bid,
         //might need to add a case for when the bid amount is > 0 to go straight to pick trump
         if(count($playersLeft) == 1 && $playersLeft[0] == $player_id) {
             //start a new trick
@@ -378,7 +378,7 @@ class Pitch extends Table
     function stNextDiscard() {
         //get count of cards in all users hands. 
         $cardCount = $this->cards->countCardsByLocationArgs( 'hand' );
-        //TODO there might be an issue here where the everyone else has discarded down but the dealer still gets skipped
+        //TODO:9 there might be an issue here where the everyone else has discarded down but the dealer still gets skipped
         //and a player gets to discard a 2nd time
         $nextPlayerId = self::getPlayerAfter(self::getActivePlayerId());
         if($nextPlayerId == self::getGameStateValue('whoWonBid')) {
@@ -483,7 +483,7 @@ class Pitch extends Table
     }
 
     function stEndHand() {
-        //TODO: move first player to the next person in order
+        //TODO:15 move first player to the next person in order
         // Count and score points, then end the game or go to the next hand.
         $players = self::loadPlayersBasicInfos();
         // Gets all "hearts" + queen of spades

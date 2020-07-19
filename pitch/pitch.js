@@ -124,7 +124,7 @@ function (dojo, declare) {
                     }
                     jQuery('#playertables').css('height','200px');
                 break;
-                //TODO for state new hand set bid amount to zero
+                //TODO:20 for state new hand set bid amount to zero
             }
         },
 
