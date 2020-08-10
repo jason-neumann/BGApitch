@@ -181,7 +181,24 @@ class Pitch extends Table
         In this space, you can put any utility methods useful for your game logic
     */
 
-
+    function getOffSuit(){
+        //get off suit id for counting Jack of the off suit
+        switch (self::getGameStateValue('trumpSuit')) {
+            case 1:
+                $offSuit = 3;
+                break;
+            case 2:
+                $offSuit = 4;
+                break;
+            case 3:
+                $offSuit = 1;
+                break;
+            case 4:
+                $offSuit = 2;
+                break;
+        }
+        return $offSuit;
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Player actions
@@ -448,36 +465,67 @@ class Pitch extends Table
         if ($this->cards->countCardInLocation('cardsontable') == 4) {
             // This is the end of the trick
             $cards_on_table = $this->cards->getCardsInLocation('cardsontable');
-            $best_value = 0;
-            $best_value_player_id = null;
+            $bestCard = new stdClass();
+            $bestCard->value = 0;
+            $bestCard->playerId = null;
+            $bestCard->suit = 0;
+            $twoOfTrumpInfo = null;
+
             foreach ( $cards_on_table as $card ) {
-                //TODO:4 2 of trump suit goes to whoever played it, not winner of round
-                //TODO:3 trump suit (not trick suit) should be considered the "best value", then trick suit if a trump card isn't played
-                // Note: type = card color
-                if ($card ['type'] == self::getGameStateValue('trickSuit')) {
-                    if ($best_value_player_id === null || $card ['type_arg'] > $best_value) {
-                        $best_value_player_id = $card ['location_arg']; // Note: location_arg = player who played this card on table
-                        $best_value = $card ['type_arg']; // Note: type_arg = value of the card
+                //trump suit has the highest value, adding 16 to them will make them more valuable than any trick suit
+                //cards that aren't trump or trick suit have no value and will never win
+                if ($card ['type'] == self::getGameStateValue('trumpSuit')) {
+                    if($card['type_arg'] == 2) {
+                        //set a flag to give the 2 of trump to the person that played it
+                        $twoOfTrumpInfo = $card;
                     }
+                    $card['type_arg'] += 16;
+                } elseif ($card['type'] != self::getGameStateValue('trickSuit')) {
+                    $card['type_arg'] = 0;
+                }
+
+                //hacks for jokers and jack of the off suit
+                //squish their value inbetween the 10 and on suit jack
+                switch($card['type_arg']) {
+                    case 15://big joker
+                        $card['type_arg'] = 26.4;
+                        break;
+                    case 16://little joker
+                        $card['type_arg'] = 26.2;
+                        break;
+                    case 11://jack of the off suit
+                        if($card['type'] == $this->getOffSuit()) {
+                            $card['type_arg'] = 26.6;
+                        }
+                        break;
+                }
+
+                if($bestCard->value == 0 || $card['type_arg'] > $bestCard->value) {
+                    $bestCard->playerId = $card['location_arg']; 
+                    $bestCard->value = $card['type_arg'];
+                    $bestCard->suit = $card['type'];
                 }
             }
-            
+
             // Active this player => he's the one who starts the next trick
-            $this->gamestate->changeActivePlayer( $best_value_player_id );
+            $this->gamestate->changeActivePlayer( $bestCard->playerId );
             
-            // Move all cards to "cardswon" of the given player
-            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $best_value_player_id);
+            // Move cards to "cardswon" of the correct player
+            if($twoOfTrumpInfo) {
+                $this->cards->moveCard( $twoOfTrumpInfo['id'], 'cardswon', $twoOfTrumpInfo['location_arg'] );
+            }
+            $this->cards->moveAllCardsInLocation('cardsontable', 'cardswon', null, $bestCard->playerId);
 
             // Notify
             // Note: we use 2 notifications here in order we can pause the display during the first notification
             //  before we move all cards to the winner (during the second)
             $players = self::loadPlayersBasicInfos();
             self::notifyAllPlayers( 'trickWin', clienttranslate('${player_name} wins the trick'), array(
-                'player_id' => $best_value_player_id,
-                'player_name' => $players[ $best_value_player_id ]['player_name']
+                'player_id' => $bestCard->playerId,
+                'player_name' => $players[ $bestCard->playerId ]['player_name']
             ) );            
             self::notifyAllPlayers( 'giveAllCardsToPlayer','', array(
-                'player_id' => $best_value_player_id
+                'player_id' => $bestCard->playerId
             ) );
         
             if ($this->cards->countCardInLocation('hand') == 0) {
@@ -506,21 +554,7 @@ class Pitch extends Table
             $player_to_points [$player_id] = 0;
         }
         $cards = $this->cards->getCardsInLocation("cardswon");
-         //get off suit id for counting Jack of the off suit
-         switch (self::getGameStateValue('trumpSuit')) {
-            case 1:
-                $offSuit = 3;
-                break;
-            case 2:
-                $offSuit = 4;
-                break;
-            case 3:
-                $offSuit = 1;
-                break;
-            case 4:
-                $offSuit = 2;
-                break;
-        }
+        $offSuit = $this->getOffSuit();
 
         foreach ( $cards as $card ) {
             $player_id = $card ['location_arg'];
